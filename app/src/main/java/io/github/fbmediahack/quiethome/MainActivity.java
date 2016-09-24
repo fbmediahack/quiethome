@@ -20,7 +20,12 @@ import com.estimote.sdk.Region;
 import com.estimote.sdk.SystemRequirementsChecker;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.FirebaseDatabase;
 
+import io.github.fbmediahack.quiethome.db.UserTable;
+import io.github.fbmediahack.quiethome.model.User;
+import rx.functions.Action1;
+import rx.schedulers.Schedulers;
 import java.util.List;
 import java.util.UUID;
 
@@ -86,6 +91,13 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
             @Override
             public void onExitedRegion(Region region) {
                 showOutOfHomeView(false);
+            }
+        });
+
+        new UserTable(FirebaseDatabase.getInstance().getReference()).getAllUsers().subscribe(new Action1<User>() {
+            @Override
+            public void call(User user) {
+                Log.w("USER", user.toString());
             }
         });
     }
