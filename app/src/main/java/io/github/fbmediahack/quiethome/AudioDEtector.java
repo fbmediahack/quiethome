@@ -7,18 +7,27 @@ package io.github.fbmediahack.quiethome;
 import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaRecorder;
+import android.os.Handler;
 import android.util.Log;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AudioDetector {
 
     private static final String LOG_TAG = "AudioRecordTest";
     private static final String EMPTY_DUMMY_FILE = "/dev/null";
+    private static final double MIN_NOICE_AMPLITUDE = 10.0;
+
 
     private AudioManager audioManager;
     private Context mContext;
     private MediaRecorder mRecorder = null;
+
+    private Thread mThread;
+    private Handler handler = new Handler();
+
 
     AudioDetector(Context appContext) {
         super();
@@ -43,6 +52,8 @@ public class AudioDetector {
             }
 
             mRecorder.start();
+
+            this.startThread();
         }
     }
 
@@ -51,6 +62,8 @@ public class AudioDetector {
             mRecorder.stop();
             mRecorder.release();
             mRecorder = null;
+
+            stopThread();
         }
     }
 
@@ -63,5 +76,53 @@ public class AudioDetector {
         }
     }
 
+    public boolean isThereNoice() {
+        return getAmplitude() > MIN_NOICE_AMPLITUDE;
+    }
+
+    public void sendAlert() throws RuntimeException {
+        Log.i(LOG_TAG, "BE QUIET I AM Sleeping");
+        mThread.interrupt();
+    }
+
+    // Inner class definition
+    protected Runnable amplitudeCheckRunnable = new Runnable() {
+
+        @Override
+        public void run() {
+
+            while (!Thread.interrupted()) {
+                try {
+                    handler.postDelayed(new Runnable()
+                    {
+                        @Override
+                        public void run() {
+                            if(isThereNoice()) {
+                                sendAlert();
+                            }
+                        }
+                    }, 100);
+                } catch (RuntimeException e) {
+                    e.printStackTrace();
+                    Log.e(LOG_TAG, "The thread is interrupted");
+                }
+
+            }
+        }
+    };
+
+    public void startThread() {
+        if(mThread == null) {
+            mThread = new Thread(amplitudeCheckRunnable);
+        }
+        mThread.start();
+    }
+
+    public void stopThread() {
+        if(mThread != null) {
+            mThread.interrupt();
+            mThread = null;
+        }
+    }
 
 }
