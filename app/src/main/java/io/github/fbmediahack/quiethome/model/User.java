@@ -33,4 +33,10 @@ public class User {
                 user.getDisplayName() == null ? "<unknown>" : user.getDisplayName(),
                 false);
     }
+
+    public static User fromFirebaseUser(FirebaseUser user, boolean b) {
+        User user1 = fromFirebaseUser(user);
+        user1.isSleeping = b;
+        return user1;
+    }
 }

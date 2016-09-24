@@ -36,6 +36,8 @@ import io.github.fbmediahack.quiethome.db.UserTable;
 import io.github.fbmediahack.quiethome.model.User;
 
 public class MainActivity extends AppCompatActivity implements AudioDetector.NoiseListener {
+    private static final int SLEEPING_MODE = 0x01;
+    private static final int AWAKE_MODE = 0x02;
 
     private AudioDetector ad = null;
     private FirebaseUser user = null;
@@ -52,9 +54,13 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
     private LinearLayoutManager mLayoutManager;
     private FirebaseRecyclerAdapter mAdapter;
 
+    private int mMode;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+
 
         user = FirebaseAuth.getInstance().getCurrentUser();
         assert user != null;
@@ -68,6 +74,8 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
                 .getAllUsersQuery();
         mAdapter = new UserRecyclerAdapter(query, User.class, new ArrayList<User>(), new ArrayList<String>());
         mRecycler.setAdapter(mAdapter);
+
+        mMode = AWAKE_MODE;
 
         setSupportActionBar(mToolbar);
 
@@ -189,14 +197,22 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
             requestPermissions(permissions, requestCode);
         }
         else {
+            new UserTable(FirebaseDatabase.getInstance().getReference()).insert(User.fromFirebaseUser(user, true));
             ad.start();
+            mMode = SLEEPING_MODE;
         }
     }
 
     private void stopDetectingAudio() {
         if (ad != null) {
             ad.stop();
+            new UserTable(FirebaseDatabase.getInstance().getReference()).insert(User.fromFirebaseUser(user, false));
+            mMode = AWAKE_MODE;
         }
+    }
+
+    public boolean isAwake() {
+        return mMode == AWAKE_MODE;
     }
 
     @Override
@@ -205,6 +221,8 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
         SystemRequirementsChecker.checkWithDefaultDialogs(this);
         if(ad != null) {
             ad.start();
+            new UserTable(FirebaseDatabase.getInstance().getReference()).insert(User.fromFirebaseUser(user, true));
+            mMode = SLEEPING_MODE;
         }
     }
 
