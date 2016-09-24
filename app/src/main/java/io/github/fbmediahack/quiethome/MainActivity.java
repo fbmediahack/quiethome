@@ -9,6 +9,8 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
@@ -19,16 +21,19 @@ import com.estimote.sdk.Beacon;
 import com.estimote.sdk.BeaconManager;
 import com.estimote.sdk.Region;
 import com.estimote.sdk.SystemRequirementsChecker;
+import com.example.matteo.firebase_recycleview.FirebaseRecyclerAdapter;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 
-import io.github.fbmediahack.quiethome.db.UserTable;
-import io.github.fbmediahack.quiethome.model.User;
-import rx.functions.Action1;
-import rx.schedulers.Schedulers;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import io.github.fbmediahack.quiethome.adapter.UserRecyclerAdapter;
+import io.github.fbmediahack.quiethome.db.UserTable;
+import io.github.fbmediahack.quiethome.model.User;
 
 public class MainActivity extends AppCompatActivity implements AudioDetector.NoiseListener {
 
@@ -43,6 +48,9 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
     private AsyncTask mLightBulbAlarmAsyncTask;
     private Toolbar mToolbar;
     private boolean mAtHome = false;
+    private RecyclerView mRecycler;
+    private LinearLayoutManager mLayoutManager;
+    private FirebaseRecyclerAdapter mAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,6 +61,14 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
 
         setContentView(R.layout.activity_main);
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        mRecycler = (RecyclerView) findViewById(R.id.recycler);
+        mLayoutManager = new LinearLayoutManager(this);
+        mRecycler.setLayoutManager(mLayoutManager);
+        final Query query = new UserTable(FirebaseDatabase.getInstance().getReference())
+                .getAllUsersQuery();
+        mAdapter = new UserRecyclerAdapter(query, User.class, new ArrayList<User>(), new ArrayList<String>());
+        mRecycler.setAdapter(mAdapter);
+
         setSupportActionBar(mToolbar);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -92,13 +108,6 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
             @Override
             public void onExitedRegion(Region region) {
                 showOutOfHomeView(false);
-            }
-        });
-
-        new UserTable(FirebaseDatabase.getInstance().getReference()).getAllUsers().subscribe(new Action1<User>() {
-            @Override
-            public void call(User user) {
-                Log.w("USER", user.toString());
             }
         });
     }

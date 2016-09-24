@@ -7,6 +7,7 @@ import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.Query;
 
 import io.github.fbmediahack.quiethome.model.User;
 import rx.Observable;
@@ -57,5 +58,9 @@ public class UserTable {
                 });
             }
         });
+    }
+
+    public Query getAllUsersQuery() {
+        return ref.child(PATH);
     }
 }

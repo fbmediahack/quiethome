@@ -27,5 +27,12 @@
         android:text="@string/sleep_disabled"
         android:onClick="enableSleep" />
 
+    <android.support.v7.widget.RecyclerView
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        android:layout_marginTop="20dp"
+        android:id="@+id/recycler"
+        android:layout_below="@id/sleep"
+        android:layout_width="match_parent"
+        android:layout_height="300dp" />
 
 </RelativeLayout>
