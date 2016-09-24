@@ -1,5 +1,6 @@
 package io.github.fbmediahack.quiethome;
 
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
@@ -12,6 +13,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.github.pwittchen.reactivebeacons.library.Beacon;
@@ -149,5 +151,29 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
     }
+
+    /** Called when the user clicks the Sleep button */
+    public void toggleSleep(View view) {
+
+        Toast.makeText(this, "Sleep button clicked", Toast.LENGTH_LONG).show();
+
+    }
+    public void showAtHomeView(){
+
+        TextView occupancyTextView = (TextView) findViewById(R.id.occupancy_alert);
+
+        //should be able to display user's name here
+        occupancyTextView.setText("User is at home");
+
+    }
+
+    public void awayFromHomeView(){
+
+        TextView occupancyTextView = (TextView) findViewById(R.id.occupancy_alert);
+
+        occupancyTextView.setText("No one is at home");
+
+    }
+
 
 }
