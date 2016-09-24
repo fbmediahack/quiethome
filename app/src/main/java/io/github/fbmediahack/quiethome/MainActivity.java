@@ -3,83 +3,120 @@ package io.github.fbmediahack.quiethome;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.estimote.sdk.Beacon;
+import com.estimote.sdk.BeaconManager;
+import com.estimote.sdk.Region;
+import com.estimote.sdk.SystemRequirementsChecker;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
-import com.github.pwittchen.reactivebeacons.library.Beacon;
-import com.github.pwittchen.reactivebeacons.library.Filter;
-import com.github.pwittchen.reactivebeacons.library.Proximity;
-import com.github.pwittchen.reactivebeacons.library.ReactiveBeacons;
+import java.util.List;
+import java.util.UUID;
 
-import rx.functions.Action1;
-import rx.schedulers.Schedulers;
-
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements AudioDetector.NoiseListener {
 
     private AudioDetector ad = null;
+    private FirebaseUser user = null;
 
     private String [] permissions = {
             "android.permission.RECORD_AUDIO",
             "android.permission.WRITE_EXTERNAL_STORAGE"};
 
+    private BeaconManager beaconManager;
+    private AsyncTask mLightBulbAlarmAsyncTask;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        user = FirebaseAuth.getInstance().getCurrentUser();
+        assert user != null;
+
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setBackgroundTintList(ResourcesCompat.getColorStateList(getResources(), android.R.color.background_dark, getTheme()));
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
+                if (mLightBulbAlarmAsyncTask == null) {
+                    mLightBulbAlarmAsyncTask = new LightBulbAlarmAsyncTask().execute();
+                    view.setBackgroundTintList(ResourcesCompat.getColorStateList(getResources(), android.R.color.holo_red_dark, getTheme()));
+                } else {
+                    mLightBulbAlarmAsyncTask.cancel(false);
+                    mLightBulbAlarmAsyncTask = null;
+                    view.setBackgroundTintList(ResourcesCompat.getColorStateList(getResources(), android.R.color.background_dark, getTheme()));
+                }
             }
         });
 
-        final Context context = this;
+        Snackbar.make(fab, "Welcome to Quiet Home, " + user.getDisplayName() + "!", Snackbar.LENGTH_SHORT)
+                .show();
 
-        prepareReactiveBeacons()
-                .observe()
-                .filter(Filter.hasMacAddress("66:29:22:2A:70:4A"))
-                .filter(Filter.proximityIsEqualTo(Proximity.NEAR))
-                .subscribeOn(Schedulers.newThread())
-                .subscribe(new Action1<Beacon>() {
-                    @Override
-                    public void call(Beacon beacon) {
-                        Toast.makeText(
-                                context,
-                                "Connected to " + beacon.macAddress,
-                                Toast.LENGTH_LONG)
-                                .show();
-                    }
-                });
+        beaconManager = new BeaconManager(this);
+        beaconManager.connect(new BeaconManager.ServiceReadyCallback() {
+            @Override
+            public void onServiceReady() {
+                beaconManager.startMonitoring(new Region(
+                        "monitored region",
+                        UUID.fromString("B9407F30-F5F8-466E-AFF9-25556B57FE6D"), 32817, 20843));
+            }
+        });
+        beaconManager.setBackgroundScanPeriod(1000, 0);
+        beaconManager.setMonitoringListener(new BeaconManager.MonitoringListener() {
+            @Override
+            public void onEnteredRegion(Region region, List<Beacon> beacons) {
+                toolbar.setTitle("YOU'RE AT HOME!");
+                showAtHomeView();
+            }
+            @Override
+            public void onExitedRegion(Region region) {
+                toolbar.setTitle("YOU'RE OUT OF HOME");
+                showOutOfHomeView();
+            }
+        });
     }
 
-    private ReactiveBeacons prepareReactiveBeacons() {
-        ReactiveBeacons reactiveBeacons = new ReactiveBeacons(this);
-        if (!reactiveBeacons.isBleSupported()) {
-            Toast.makeText(this, "BLE is not supported on this device", Toast.LENGTH_SHORT).show();
-        }
+    /** Called when the user clicks the Sleep button */
+    public void toggleSleep(View view) {
 
-        if (!reactiveBeacons.isBluetoothEnabled()) {
-            reactiveBeacons.requestBluetoothAccess(this);
-        } else if (!reactiveBeacons.isLocationEnabled(this)) {
-            reactiveBeacons.requestLocationAccess(this);
-        }
-        return reactiveBeacons;
+        Toast.makeText(this, "Sleep button clicked", Toast.LENGTH_LONG).show();
+
+    }
+
+    private void showAtHomeView(){
+
+        TextView occupancyTextView = (TextView) findViewById(R.id.occupancy_alert);
+
+        //should be able to display user's name here
+        occupancyTextView.setText("User is at home");
+
+    }
+
+    public void showOutOfHomeView(){
+
+        TextView occupancyTextView = (TextView) findViewById(R.id.occupancy_alert);
+
+        occupancyTextView.setText("No one is at home");
+
     }
 
     @Override
@@ -114,22 +151,23 @@ public class MainActivity extends AppCompatActivity {
     protected void onStop() {
         super.onStop();
         this.stopDetectingAudio();
+
+        if (mLightBulbAlarmAsyncTask != null) {
+            mLightBulbAlarmAsyncTask.cancel(false);
+        }
     }
 
     private void startDetectingAudio() {
         if (ad == null) {
-            ad = new AudioDetector(getApplicationContext());
+            ad = new AudioDetector(getApplicationContext(), this);
         }
 
-        String permission = "android.permission.RECORD_AUDIO";
-        int res = checkCallingOrSelfPermission(permission);
-        if (res == PackageManager.PERMISSION_GRANTED) {
+        int requestCode = 200;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(permissions, requestCode);
+        }
+        else {
             ad.start();
-        } else {
-            int requestCode = 200;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                requestPermissions(permissions, requestCode);
-            }
         }
     }
 
@@ -137,6 +175,12 @@ public class MainActivity extends AppCompatActivity {
         if (ad != null) {
             ad.stop();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        SystemRequirementsChecker.checkWithDefaultDialogs(this);
     }
 
     @Override
@@ -152,28 +196,19 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    /** Called when the user clicks the Sleep button */
-    public void toggleSleep(View view) {
+    @Override
+    public void onNoiceDetected() {
+        // TODO: Notify Light
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+                mLightBulbAlarmAsyncTask = new LightBulbAlarmAsyncTask().execute();
+                fab.setBackgroundTintList(ResourcesCompat.getColorStateList(getResources(), android.R.color.holo_red_dark, getTheme()));
+            }
+        });
 
-        Toast.makeText(this, "Sleep button clicked", Toast.LENGTH_LONG).show();
-
+        // TODO: Notify user , play sound
     }
-    public void showAtHomeView(){
-
-        TextView occupancyTextView = (TextView) findViewById(R.id.occupancy_alert);
-
-        //should be able to display user's name here
-        occupancyTextView.setText("User is at home");
-
-    }
-
-    public void awayFromHomeView(){
-
-        TextView occupancyTextView = (TextView) findViewById(R.id.occupancy_alert);
-
-        occupancyTextView.setText("No one is at home");
-
-    }
-
 
 }
