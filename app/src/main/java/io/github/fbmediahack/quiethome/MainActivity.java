@@ -69,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
         Snackbar.make(fab, "Welcome to Quiet Home, " + user.getDisplayName() + "!", Snackbar.LENGTH_SHORT)
                 .show();
 
+        beaconManager = new BeaconManager(this);
         beaconManager.connect(new BeaconManager.ServiceReadyCallback() {
             @Override
             public void onServiceReady() {
