@@ -103,6 +103,7 @@ public class AudioDetector {
                         }
                     }, 100);
                 } catch (RuntimeException e) {
+                    System.out.print("Thread is interrupted!");
                     e.printStackTrace();
                     Log.e(LOG_TAG, "The thread is interrupted");
                 }
