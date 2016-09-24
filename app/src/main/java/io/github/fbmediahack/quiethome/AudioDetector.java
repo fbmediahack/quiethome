@@ -16,22 +16,23 @@ public class AudioDetector {
 
     private static final String LOG_TAG = "AudioRecordTest";
     private static final String EMPTY_DUMMY_FILE = "/dev/null";
-    private static final double MIN_NOICE_AMPLITUDE = 10.0;
+    private static final double MIN_NOICE_AMPLITUDE = 20.0;
 
 
     private AudioManager audioManager;
     private Context mContext;
     private MediaRecorder mRecorder = null;
 
+    private NoiseListener noiceListener;
+
     private Thread mThread;
-    private Handler handler = new Handler();
 
 
-    AudioDetector(Context appContext) {
+    AudioDetector(Context appContext, NoiseListener listener) {
         super();
         this.mContext = appContext;
         this.audioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
-
+        this.noiceListener = listener;
     }
 
     public void start() {
@@ -67,7 +68,7 @@ public class AudioDetector {
 
     public double getAmplitude() {
         if (mRecorder != null) {
-            System.out.println("AMPLITUDE : " + mRecorder.getMaxAmplitude());
+            Log.d(LOG_TAG, "AMPLITUDE : " + mRecorder.getMaxAmplitude());
             return mRecorder.getMaxAmplitude();
         }
         else {
@@ -80,31 +81,23 @@ public class AudioDetector {
     }
 
     public void sendAlert() throws RuntimeException {
-        System.out.println("BE QUIET I AM Sleeping");
         Log.i(LOG_TAG, "BE QUIET I AM Sleeping");
-        mThread.interrupt();
+        noiceListener.onNoiceDetected();
+        this.stopThread();
     }
 
     // Inner class definition
     protected Runnable amplitudeCheckRunnable = new Runnable() {
-
         @Override
         public void run() {
-
+            Log.i(LOG_TAG, "THREAD: started");
             while (!Thread.interrupted()) {
                 try {
-                    System.out.println("THREAD: started");
-                    handler.postDelayed(new Runnable()
-                    {
-                        @Override
-                        public void run() {
-                            if(isThereNoice()) {
-                                sendAlert();
-                            }
-                        }
-                    }, 500);
-                } catch (RuntimeException e) {
-                    System.out.println("Thread is interrupted!");
+                    Thread.sleep(500);
+                    if(isThereNoice()) {
+                        sendAlert();
+                    }
+                } catch (InterruptedException e) {
                     e.printStackTrace();
                     Log.e(LOG_TAG, "The thread is interrupted");
                 }
@@ -124,7 +117,12 @@ public class AudioDetector {
         if(mThread != null) {
             mThread.interrupt();
             mThread = null;
+            Log.d(LOG_TAG, "Thread Is Stopped");
         }
     }
 
+    interface NoiseListener {
+        public void onNoiceDetected();
+    }
 }
+

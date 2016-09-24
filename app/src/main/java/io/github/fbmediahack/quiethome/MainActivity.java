@@ -22,7 +22,7 @@ import com.github.pwittchen.reactivebeacons.library.ReactiveBeacons;
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements AudioDetector.NoiseListener {
 
     private AudioDetector ad = null;
 
@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void startDetectingAudio() {
         if (ad == null) {
-            ad = new AudioDetector(getApplicationContext());
+            ad = new AudioDetector(getApplicationContext(), this);
         }
 
         String permission = "android.permission.RECORD_AUDIO";
@@ -150,4 +150,9 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    @Override
+    public void onNoiceDetected() {
+        // TODO: Notify Lights
+        // TODO: Notify user , play sound
+    }
 }
