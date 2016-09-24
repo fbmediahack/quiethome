@@ -7,7 +7,6 @@ package io.github.fbmediahack.quiethome;
 import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaRecorder;
-import android.os.Handler;
 import android.util.Log;
 
 import java.io.IOException;
@@ -16,7 +15,7 @@ public class AudioDetector {
 
     private static final String LOG_TAG = "AudioRecordTest";
     private static final String EMPTY_DUMMY_FILE = "/dev/null";
-    private static final double MIN_NOICE_AMPLITUDE = 7000.0;
+    private static final double MIN_NOICE_AMPLITUDE = 2000.0;
 
 
     private AudioManager audioManager;
