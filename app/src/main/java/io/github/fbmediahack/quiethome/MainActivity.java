@@ -20,6 +20,7 @@ import com.github.pwittchen.reactivebeacons.library.Filter;
 import com.github.pwittchen.reactivebeacons.library.Proximity;
 import com.github.pwittchen.reactivebeacons.library.ReactiveBeacons;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
@@ -28,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int RC_SIGN_IN = 0;
     private AudioDetector ad = null;
+    private FirebaseUser user;
 
     private String [] permissions = {
             "android.permission.RECORD_AUDIO",
@@ -36,6 +38,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        user = FirebaseAuth.getInstance().getCurrentUser();
+        assert user != null;
 
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -47,6 +52,9 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View view) {
             }
         });
+
+        Snackbar.make(fab, "Welcome to Quiet Home, " + user.getDisplayName() + "!", Snackbar.LENGTH_SHORT)
+                .show();
 
         final Context context = this;
 
