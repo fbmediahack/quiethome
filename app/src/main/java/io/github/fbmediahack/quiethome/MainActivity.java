@@ -27,9 +27,8 @@ import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int RC_SIGN_IN = 0;
     private AudioDetector ad = null;
-    private FirebaseUser user;
+    private FirebaseUser user = null;
 
     private String [] permissions = {
             "android.permission.RECORD_AUDIO",
