@@ -1,6 +1,5 @@
 package io.github.fbmediahack.quiethome;
 
-import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -9,76 +8,84 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Toast;
+import android.widget.TextView;
 
-import com.github.pwittchen.reactivebeacons.library.Beacon;
-import com.github.pwittchen.reactivebeacons.library.Filter;
-import com.github.pwittchen.reactivebeacons.library.Proximity;
-import com.github.pwittchen.reactivebeacons.library.ReactiveBeacons;
+import com.estimote.sdk.Beacon;
+import com.estimote.sdk.BeaconManager;
+import com.estimote.sdk.Region;
+import com.estimote.sdk.SystemRequirementsChecker;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
-import rx.functions.Action1;
-import rx.schedulers.Schedulers;
+import java.util.List;
+import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements AudioDetector.NoiseListener {
 
     private AudioDetector ad = null;
+    private FirebaseUser user = null;
 
     private String [] permissions = {
             "android.permission.RECORD_AUDIO",
             "android.permission.WRITE_EXTERNAL_STORAGE"};
+    private BeaconManager beaconManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        user = FirebaseAuth.getInstance().getCurrentUser();
+        assert user != null;
+
         setContentView(R.layout.activity_main);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
             }
         });
 
-        final Context context = this;
+        Snackbar.make(fab, "Welcome to Quiet Home, " + user.getDisplayName() + "!", Snackbar.LENGTH_SHORT)
+                .show();
 
-        prepareReactiveBeacons()
-                .observe()
-                .filter(Filter.hasMacAddress("66:29:22:2A:70:4A"))
-                .filter(Filter.proximityIsEqualTo(Proximity.NEAR))
-                .subscribeOn(Schedulers.newThread())
-                .subscribe(new Action1<Beacon>() {
-                    @Override
-                    public void call(Beacon beacon) {
-                        Toast.makeText(
-                                context,
-                                "Connected to " + beacon.macAddress,
-                                Toast.LENGTH_LONG)
-                                .show();
-                    }
-                });
+        beaconManager.connect(new BeaconManager.ServiceReadyCallback() {
+            @Override
+            public void onServiceReady() {
+                beaconManager.startMonitoring(new Region(
+                        "monitored region",
+                        UUID.fromString("B9407F30-F5F8-466E-AFF9-25556B57FE6D"), 32817, 20843));
+            }
+        });
+        beaconManager.setBackgroundScanPeriod(1000, 0);
+        beaconManager.setMonitoringListener(new BeaconManager.MonitoringListener() {
+            @Override
+            public void onEnteredRegion(Region region, List<Beacon> beacons) {
+                toolbar.setTitle("YOU'RE AT HOME!");
+                showAtHomeView();
+            }
+            @Override
+            public void onExitedRegion(Region region) {
+                toolbar.setTitle("YOU'RE OUT OF HOME");
+                showOutOfHomeView();
+            }
+        });
     }
 
-    private ReactiveBeacons prepareReactiveBeacons() {
-        ReactiveBeacons reactiveBeacons = new ReactiveBeacons(this);
-        if (!reactiveBeacons.isBleSupported()) {
-            Toast.makeText(this, "BLE is not supported on this device", Toast.LENGTH_SHORT).show();
-        }
-
-        if (!reactiveBeacons.isBluetoothEnabled()) {
-            reactiveBeacons.requestBluetoothAccess(this);
-        } else if (!reactiveBeacons.isLocationEnabled(this)) {
-            reactiveBeacons.requestLocationAccess(this);
-        }
-        return reactiveBeacons;
+    private void showAtHomeView() {
+        // TODO: Do stuff
     }
+
+    private void showOutOfHomeView() {
+        // TODO: Do stuff
+    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -119,15 +126,9 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
             ad = new AudioDetector(getApplicationContext(), this);
         }
 
-        String permission = "android.permission.RECORD_AUDIO";
-        int res = checkCallingOrSelfPermission(permission);
-        if (res == PackageManager.PERMISSION_GRANTED) {
-            ad.start();
-        } else {
-            int requestCode = 200;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                requestPermissions(permissions, requestCode);
-            }
+        int requestCode = 200;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(permissions, requestCode);
         }
     }
 
@@ -135,6 +136,12 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
         if (ad != null) {
             ad.stop();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        SystemRequirementsChecker.checkWithDefaultDialogs(this);
     }
 
     @Override
