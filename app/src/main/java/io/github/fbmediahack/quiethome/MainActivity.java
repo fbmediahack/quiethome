@@ -1,11 +1,14 @@
 package io.github.fbmediahack.quiethome;
 
 import android.content.pm.PackageManager;
+import android.content.res.ColorStateList;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -32,7 +35,9 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
     private String [] permissions = {
             "android.permission.RECORD_AUDIO",
             "android.permission.WRITE_EXTERNAL_STORAGE"};
+
     private BeaconManager beaconManager;
+    private AsyncTask mLightBulbAlarmAsyncTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,9 +51,18 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
         setSupportActionBar(toolbar);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setBackgroundTintList(ResourcesCompat.getColorStateList(getResources(), android.R.color.background_dark, getTheme()));
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (mLightBulbAlarmAsyncTask == null) {
+                    mLightBulbAlarmAsyncTask = new LightBulbAlarmAsyncTask().execute();
+                    view.setBackgroundTintList(ResourcesCompat.getColorStateList(getResources(), android.R.color.holo_red_dark, getTheme()));
+                } else {
+                    mLightBulbAlarmAsyncTask.cancel(false);
+                    mLightBulbAlarmAsyncTask = null;
+                    view.setBackgroundTintList(ResourcesCompat.getColorStateList(getResources(), android.R.color.background_dark, getTheme()));
+                }
             }
         });
 
@@ -119,6 +133,10 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
     protected void onStop() {
         super.onStop();
         this.stopDetectingAudio();
+
+        if (mLightBulbAlarmAsyncTask != null) {
+            mLightBulbAlarmAsyncTask.cancel(false);
+        }
     }
 
     private void startDetectingAudio() {
