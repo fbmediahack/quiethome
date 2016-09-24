@@ -14,16 +14,19 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
+import com.firebase.ui.auth.AuthUI;
 import com.github.pwittchen.reactivebeacons.library.Beacon;
 import com.github.pwittchen.reactivebeacons.library.Filter;
 import com.github.pwittchen.reactivebeacons.library.Proximity;
 import com.github.pwittchen.reactivebeacons.library.ReactiveBeacons;
+import com.google.firebase.auth.FirebaseAuth;
 
 import rx.functions.Action1;
 import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final int RC_SIGN_IN = 0;
     private AudioDetector ad = null;
 
     private String [] permissions = {
@@ -42,8 +45,6 @@ public class MainActivity extends AppCompatActivity {
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
             }
         });
 
