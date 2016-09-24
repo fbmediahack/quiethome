@@ -8,7 +8,6 @@ import android.support.annotation.NonNull;
 import com.firebase.ui.auth.AuthUI;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import io.github.fbmediahack.quiethome.db.UserTable;
@@ -17,7 +16,6 @@ import io.github.fbmediahack.quiethome.model.User;
 public class StartupActivity extends Activity {
 
     private static final int RC_SIGN_IN = 1;
-    private DatabaseReference db = null;
     private UserTable userTable;
 
     @Override
