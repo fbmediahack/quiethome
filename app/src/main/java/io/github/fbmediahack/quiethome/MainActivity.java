@@ -14,7 +14,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
 
-import com.firebase.ui.auth.AuthUI;
 import com.github.pwittchen.reactivebeacons.library.Beacon;
 import com.github.pwittchen.reactivebeacons.library.Filter;
 import com.github.pwittchen.reactivebeacons.library.Proximity;
