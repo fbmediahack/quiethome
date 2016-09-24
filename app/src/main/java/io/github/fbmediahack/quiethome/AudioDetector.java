@@ -11,8 +11,6 @@ import android.os.Handler;
 import android.util.Log;
 
 import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AudioDetector {
 
@@ -69,6 +67,7 @@ public class AudioDetector {
 
     public double getAmplitude() {
         if (mRecorder != null) {
+            System.out.println("AMPLITUDE : " + mRecorder.getMaxAmplitude());
             return mRecorder.getMaxAmplitude();
         }
         else {
@@ -81,6 +80,7 @@ public class AudioDetector {
     }
 
     public void sendAlert() throws RuntimeException {
+        System.out.println("BE QUIET I AM Sleeping");
         Log.i(LOG_TAG, "BE QUIET I AM Sleeping");
         mThread.interrupt();
     }
@@ -93,6 +93,7 @@ public class AudioDetector {
 
             while (!Thread.interrupted()) {
                 try {
+                    System.out.println("THREAD: started");
                     handler.postDelayed(new Runnable()
                     {
                         @Override
@@ -101,9 +102,9 @@ public class AudioDetector {
                                 sendAlert();
                             }
                         }
-                    }, 100);
+                    }, 500);
                 } catch (RuntimeException e) {
-                    System.out.print("Thread is interrupted!");
+                    System.out.println("Thread is interrupted!");
                     e.printStackTrace();
                     Log.e(LOG_TAG, "The thread is interrupted");
                 }
