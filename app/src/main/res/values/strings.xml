@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Quiet Home</string>
     <string name="action_settings">Settings</string>
+    <string name="action_toggle">Toggle</string>
     <string name="sleep_enabled">Sleep Enabled!</string>
     <string name="sleep_disabled">Sleep Disabled!</string>
 </resources>

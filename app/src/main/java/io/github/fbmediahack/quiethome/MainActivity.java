@@ -1,7 +1,6 @@
 package io.github.fbmediahack.quiethome;
 
 import android.content.pm.PackageManager;
-import android.content.res.ColorStateList;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -11,11 +10,9 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.TextView;
 
 import com.estimote.sdk.Beacon;
 import com.estimote.sdk.BeaconManager;
@@ -23,7 +20,12 @@ import com.estimote.sdk.Region;
 import com.estimote.sdk.SystemRequirementsChecker;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.FirebaseDatabase;
 
+import io.github.fbmediahack.quiethome.db.UserTable;
+import io.github.fbmediahack.quiethome.model.User;
+import rx.functions.Action1;
+import rx.schedulers.Schedulers;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,6 +40,8 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
 
     private BeaconManager beaconManager;
     private AsyncTask mLightBulbAlarmAsyncTask;
+    private Toolbar mToolbar;
+    private boolean mAtHome = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,8 +51,8 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
         assert user != null;
 
         setContentView(R.layout.activity_main);
-        final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(mToolbar);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setBackgroundTintList(ResourcesCompat.getColorStateList(getResources(), android.R.color.background_dark, getTheme()));
@@ -82,22 +86,39 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
         beaconManager.setMonitoringListener(new BeaconManager.MonitoringListener() {
             @Override
             public void onEnteredRegion(Region region, List<Beacon> beacons) {
-                toolbar.setTitle("YOU'RE AT HOME!");
-                showAtHomeView();
+                showAtHomeView(false);
             }
             @Override
             public void onExitedRegion(Region region) {
-                toolbar.setTitle("YOU'RE OUT OF HOME");
-                showOutOfHomeView();
+                showOutOfHomeView(false);
+            }
+        });
+
+        new UserTable(FirebaseDatabase.getInstance().getReference()).getAllUsers().subscribe(new Action1<User>() {
+            @Override
+            public void call(User user) {
+                Log.w("USER", user.toString());
             }
         });
     }
 
-    private void showAtHomeView() {
+    private void showAtHomeView(boolean manual) {
+        mAtHome = true;
+        if (manual) {
+            mToolbar.setTitle("[YOU'RE AT HOME!]");
+        } else {
+            mToolbar.setTitle("YOU'RE AT HOME!");
+        }
         // TODO: Do stuff
     }
 
-    private void showOutOfHomeView() {
+    private void showOutOfHomeView(boolean manual) {
+        mAtHome = false;
+        if (manual) {
+            mToolbar.setTitle("[YOU'RE OUT OF HOME]");
+        } else {
+            mToolbar.setTitle("YOU'RE OUT OF HOME");
+        }
         // TODO: Do stuff
     }
 
@@ -119,6 +140,14 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
+        }
+
+        if (id == R.id.action_toggle) {
+            if (mAtHome) {
+                showOutOfHomeView(true);
+            } else {
+                showAtHomeView(true);
+            }
         }
 
         return super.onOptionsItemSelected(item);
