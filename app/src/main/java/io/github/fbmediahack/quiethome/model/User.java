@@ -5,23 +5,17 @@ import android.support.annotation.NonNull;
 import com.google.firebase.auth.FirebaseUser;
 
 public class User {
-    @NonNull
     public String userId;
-    @NonNull
     public String displayName;
+    public boolean isSleeping = false;
 
     public User() {
     }
 
-    public User(@NonNull String userId, @NonNull String displayName) {
+    public User(@NonNull String userId, @NonNull String displayName, boolean isSleeping) {
         this.userId = userId;
         this.displayName = displayName;
-    }
-
-    public static User fromFirebaseUser(@NonNull final FirebaseUser user) {
-        return new User(
-                user.getUid(),
-                user.getDisplayName() == null ? "<unknown>" : user.getDisplayName());
+        this.isSleeping = isSleeping;
     }
 
     @Override
@@ -29,6 +23,14 @@ public class User {
         return "User{" +
                 "userId='" + userId + '\'' +
                 ", displayName='" + displayName + '\'' +
+                ", isSleeping=" + isSleeping +
                 '}';
+    }
+
+    public static User fromFirebaseUser(@NonNull final FirebaseUser user) {
+        return new User(
+                user.getUid(),
+                user.getDisplayName() == null ? "<unknown>" : user.getDisplayName(),
+                false);
     }
 }
