@@ -27,12 +27,15 @@ public class AudioDetector {
 
     private Thread mThread;
 
-
     AudioDetector(Context appContext, NoiseListener listener) {
         super();
         this.mContext = appContext;
         this.audioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
         this.noiceListener = listener;
+    }
+
+    interface NoiseListener {
+        public void onNoiceDetected();
     }
 
     public void start() {
@@ -76,14 +79,14 @@ public class AudioDetector {
         }
     }
 
-    public boolean isThereNoice() {
+    public boolean isThereNoise() {
         return getAmplitude() > MIN_NOICE_AMPLITUDE;
     }
 
     public void sendAlert() throws RuntimeException {
         Log.i(LOG_TAG, "BE QUIET I AM Sleeping");
-        noiceListener.onNoiceDetected();
         this.stopThread();
+        noiceListener.onNoiceDetected();
     }
 
     // Inner class definition
@@ -94,14 +97,13 @@ public class AudioDetector {
             while (!Thread.interrupted()) {
                 try {
                     Thread.sleep(500);
-                    if(isThereNoice()) {
+                    if(isThereNoise()) {
                         sendAlert();
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                     Log.e(LOG_TAG, "The thread is interrupted");
                 }
-
             }
         }
     };
@@ -119,10 +121,6 @@ public class AudioDetector {
             mThread = null;
             Log.d(LOG_TAG, "Thread Is Stopped");
         }
-    }
-
-    interface NoiseListener {
-        public void onNoiceDetected();
     }
 }
 

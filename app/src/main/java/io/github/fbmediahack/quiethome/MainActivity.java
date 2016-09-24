@@ -164,6 +164,9 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
     protected void onResume() {
         super.onResume();
         SystemRequirementsChecker.checkWithDefaultDialogs(this);
+        if(ad != null) {
+            ad.start();
+        }
     }
 
     @Override
