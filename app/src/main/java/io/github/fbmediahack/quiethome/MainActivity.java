@@ -1,9 +1,6 @@
 package io.github.fbmediahack.quiethome;
 
-import android.app.PendingIntent;
-import android.content.Context;
 import android.content.pm.PackageManager;
-import android.content.res.ColorStateList;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -12,28 +9,39 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import com.estimote.sdk.Beacon;
 import com.estimote.sdk.BeaconManager;
 import com.estimote.sdk.Region;
 import com.estimote.sdk.SystemRequirementsChecker;
+import com.example.matteo.firebase_recycleview.FirebaseRecyclerAdapter;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import io.github.fbmediahack.quiethome.adapter.UserRecyclerAdapter;
+import io.github.fbmediahack.quiethome.db.UserTable;
+import io.github.fbmediahack.quiethome.model.User;
 
 public class MainActivity extends AppCompatActivity implements AudioDetector.NoiseListener {
 
     private AudioDetector ad = null;
     private FirebaseUser user = null;
+    private boolean sleepModeStatus= false;
 
     private String [] permissions = {
             "android.permission.RECORD_AUDIO",
@@ -41,6 +49,11 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
 
     private BeaconManager beaconManager;
     private AsyncTask mLightBulbAlarmAsyncTask;
+    private Toolbar mToolbar;
+    private boolean mAtHome = false;
+    private RecyclerView mRecycler;
+    private LinearLayoutManager mLayoutManager;
+    private FirebaseRecyclerAdapter mAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,8 +63,16 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
         assert user != null;
 
         setContentView(R.layout.activity_main);
-        final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        mRecycler = (RecyclerView) findViewById(R.id.recycler);
+        mLayoutManager = new LinearLayoutManager(this);
+        mRecycler.setLayoutManager(mLayoutManager);
+        final Query query = new UserTable(FirebaseDatabase.getInstance().getReference())
+                .getAllUsersQuery();
+        mAdapter = new UserRecyclerAdapter(query, User.class, new ArrayList<User>(), new ArrayList<String>());
+        mRecycler.setAdapter(mAdapter);
+
+        setSupportActionBar(mToolbar);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setBackgroundTintList(ResourcesCompat.getColorStateList(getResources(), android.R.color.background_dark, getTheme()));
@@ -85,13 +106,11 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
         beaconManager.setMonitoringListener(new BeaconManager.MonitoringListener() {
             @Override
             public void onEnteredRegion(Region region, List<Beacon> beacons) {
-                toolbar.setTitle("YOU'RE AT HOME!");
-                showAtHomeView();
+                showAtHomeView(false);
             }
             @Override
             public void onExitedRegion(Region region) {
-                toolbar.setTitle("YOU'RE OUT OF HOME");
-                showOutOfHomeView();
+                showOutOfHomeView(false);
             }
         });
     }
@@ -99,27 +118,37 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
     /** Called when the user clicks the Sleep button */
     public void toggleSleep(View view) {
 
-        if (startDetectingAudio()) {
-            ((Button)view).setText("Sleep Enabled!");
+        if (!sleepModeStatus) {
+            ((Button) view).setText("Sleep Enabled!");
             Toast.makeText(this, "Sleep mode now enabled!", Toast.LENGTH_LONG).show();
+            sleepModeStatus = true;
 
         } else {
-            ((Button)view).setText("Sleep disabled!");
+            ((Button) view).setText("Sleep disabled!");
             Toast.makeText(this, "Sleep mode now disabled!", Toast.LENGTH_LONG).show();
         }
 
     }
-
-    private void showAtHomeView(){
-
+    private void showAtHomeView(boolean manual) {
+        mAtHome = true;
+        if (manual) {
+            mToolbar.setTitle("[YOU'RE AT HOME!]");
+        } else {
+            mToolbar.setTitle("YOU'RE AT HOME!");
+        }
         TextView occupancyTextView = (TextView) findViewById(R.id.occupancy_alert);
 
         //should be able to display user's name here
         occupancyTextView.setText("User is at home");
-
     }
 
-    public void showOutOfHomeView(){
+    private void showOutOfHomeView(boolean manual) {
+        mAtHome = false;
+        if (manual) {
+            mToolbar.setTitle("[YOU'RE OUT OF HOME]");
+        } else {
+            mToolbar.setTitle("YOU'RE OUT OF HOME");
+        }
 
         TextView occupancyTextView = (TextView) findViewById(R.id.occupancy_alert);
 
@@ -144,6 +173,14 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
+        }
+
+        if (id == R.id.action_toggle) {
+            if (mAtHome) {
+                showOutOfHomeView(true);
+            } else {
+                showAtHomeView(true);
+            }
         }
 
         return super.onOptionsItemSelected(item);
@@ -189,6 +226,9 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
     protected void onResume() {
         super.onResume();
         SystemRequirementsChecker.checkWithDefaultDialogs(this);
+        if(ad != null) {
+            ad.start();
+        }
     }
 
     @Override
