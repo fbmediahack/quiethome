@@ -16,7 +16,7 @@ public class AudioDetector {
 
     private static final String LOG_TAG = "AudioRecordTest";
     private static final String EMPTY_DUMMY_FILE = "/dev/null";
-    private static final double MIN_NOICE_AMPLITUDE = 20.0;
+    private static final double MIN_NOICE_AMPLITUDE = 7000.0;
 
 
     private AudioManager audioManager;
