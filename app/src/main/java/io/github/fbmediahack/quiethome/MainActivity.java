@@ -11,6 +11,7 @@ import android.view.MenuItem;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static AudioDetector ad = null;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -26,6 +27,10 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+
+        if(ad == null) {
+            ad = new AudioDetector(getApplicationContext());
+        }
     }
 
     @Override
@@ -48,5 +53,25 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        this.startDetectingAudio();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        this.stopDetectingAudio();
+    }
+
+    private void startDetectingAudio() {
+        this.ad.start();
+    }
+
+    private void stopDetectingAudio() {
+        this.ad.stop();
     }
 }
