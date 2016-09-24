@@ -1,5 +1,4 @@
 apply plugin: 'com.android.application'
-apply plugin: 'com.google.gms.google-services'
 
 android {
     compileSdkVersion 24
@@ -39,7 +38,10 @@ dependencies {
     compile 'com.squareup.okhttp3:okhttp:3.4.1'
 
     // Firebase
+    compile 'com.google.firebase:firebase-core:9.6.0'
     compile 'com.google.firebase:firebase-crash:9.6.0'
+    compile 'com.google.firebase:firebase-auth:9.6.0'
+    compile 'com.google.android.gms:play-services-auth:9.6.0'
 
     // A bit of Rx
     compile 'io.reactivex:rxandroid:1.2.1'
@@ -50,3 +52,5 @@ dependencies {
 
     testCompile 'junit:junit:4.12'
 }
+
+apply plugin: 'com.google.gms.google-services'
