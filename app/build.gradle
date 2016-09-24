@@ -41,5 +41,12 @@ dependencies {
     // Firebase
     compile 'com.google.firebase:firebase-crash:9.6.0'
 
+    // A bit of Rx
+    compile 'io.reactivex:rxandroid:1.2.1'
+    compile 'io.reactivex:rxjava:1.1.6'
+
+    // Beacon
+    compile 'com.github.pwittchen:reactivebeacons:0.5.1'
+
     testCompile 'junit:junit:4.12'
 }
