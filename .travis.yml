@@ -13,7 +13,8 @@ android:
     - extra-google-m2repository
 
 script:
-  - ./gradlew clean test
+  - cp app/google-services.example.json app/google-services.json
+  - ./gradlew clean assembleDebug test
 
 branches:
   except:
