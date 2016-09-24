@@ -17,6 +17,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.estimote.sdk.Beacon;
@@ -98,7 +99,14 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
     /** Called when the user clicks the Sleep button */
     public void toggleSleep(View view) {
 
-        Toast.makeText(this, "Sleep button clicked", Toast.LENGTH_LONG).show();
+        if (startDetectingAudio()) {
+            ((Button)view).setText("Sleep Enabled!");
+            Toast.makeText(this, "Sleep mode now enabled!", Toast.LENGTH_LONG).show();
+
+        } else {
+            ((Button)view).setText("Sleep disabled!");
+            Toast.makeText(this, "Sleep mode now disabled!", Toast.LENGTH_LONG).show();
+        }
 
     }
 
