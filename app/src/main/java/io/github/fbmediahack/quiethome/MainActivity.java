@@ -149,6 +149,9 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestPermissions(permissions, requestCode);
         }
+        else {
+            ad.start();
+        }
     }
 
     private void stopDetectingAudio() {
@@ -178,7 +181,16 @@ public class MainActivity extends AppCompatActivity implements AudioDetector.Noi
 
     @Override
     public void onNoiceDetected() {
-        // TODO: Notify Lights
+        // TODO: Notify Light
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+                mLightBulbAlarmAsyncTask = new LightBulbAlarmAsyncTask().execute();
+                fab.setBackgroundTintList(ResourcesCompat.getColorStateList(getResources(), android.R.color.holo_red_dark, getTheme()));
+            }
+        });
+
         // TODO: Notify user , play sound
     }
 }
